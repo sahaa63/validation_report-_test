@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 import io
+import os
 import numpy as np
+
+
 
 def generate_validation_report(cognos_df, pbi_df):
     # Identify dimensions and measures
@@ -92,10 +95,13 @@ def main():
 
             output.seek(0)
             
+            original_filename = os.path.splitext(uploaded_file.name)[0]
+            new_file_name = f"{original_filename}_validation_report.xlsx"
+            
             st.download_button(
                 label="Download Excel Report",
                 data=output,
-                file_name="validation_report.xlsx",
+                file_name=new_file_name,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
