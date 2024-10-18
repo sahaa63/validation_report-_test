@@ -96,7 +96,7 @@ def main():
             output.seek(0)
             
             original_filename = os.path.splitext(uploaded_file.name)[0]
-            new_file_name = f"{original_filename}_validation_report.xlsx"
+            new_file_name = f"{original_filename}_validation_report.xlsx
             
             st.download_button(
                 label="Download Excel Report",
