@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import io
@@ -89,8 +90,8 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_excel'] = validation_report['unique_key'].map(dict(zip(excel_agg['unique_key'], excel_agg[measure])))
         validation_report[f'{measure}_PBI'] = validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[measure])))
         
-        # Calculate difference (PBI - excel)
-           validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_PBI'].fillna(0).apply( lambda pbi: abs(pbi - validation_report[f'{measure}_excel'].fillna(0)) / pbi if pbi != 0 else 0)
+    # Calculate difference (PBI - excel)
+        validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_PBI'].fillna(0).apply( lambda pbi: abs(pbi - validation_report[f'{measure}_excel'].fillna(0)) / pbi if pbi != 0 else 0)
 
     # Reorder columns
     column_order = ['unique_key'] + dims + ['presence'] + \
