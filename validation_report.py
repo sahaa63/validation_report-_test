@@ -91,8 +91,10 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_PBI'] = validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[measure])))
         
     # Calculate difference (PBI - excel)
-        validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_PBI'].fillna(0).apply( lambda pbi: abs(pbi - validation_report[f'{measure}_excel'].fillna(0)) / pbi if pbi != 0 else 0)
-
+        validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_PBI'].fillna(0).apply(
+    lambda pbi: (abs(pbi - validation_report[f'{measure}_excel'].fillna(0)) / pbi * 100) if pbi != 0 else 0
+)
+        validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_Diff'].astype(str) + '%'
     # Reorder columns
     column_order = ['unique_key'] + dims + ['presence'] + \
                    [col for measure in all_measures for col in 
