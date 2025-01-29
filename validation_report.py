@@ -24,8 +24,6 @@ checklist_data = {
         "Dateformat to be YYYY-MM-DD [hh:mm:ss] in refresh date as well",
         "Sorting is replicated"
     ],
-    "Status - Level1": ["" for _ in range(14)],
-    "Status - Level2": ["" for _ in range(14)]
 }
 checklist_df = pd.DataFrame(checklist_data)
 
