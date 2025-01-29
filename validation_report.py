@@ -7,21 +7,14 @@ import os
 
 # Define the checklist data as a DataFrame
 checklist_data = {
-    "S.No": range(1, 15),
+    "S.No": range(1, 7),
     "Checklist": [
         "All the columns of excel replicated in PBI (No extra columns)",
         "All the filters of excel replicated in PBI",
         "Filters working as expected (single/multi select as usual)",
         "Column names matching with excel",
         "Currency symbols to be replicated",
-        "Filters need to be aligned vertically/horizontally",
-        "Report Name & Package name to be written",
-        "Entire model to be refreshed before publishing to PBI service",
-        "Date Last refreshed to be removed from filter/table",
-        "Table's column header to be bold",
-        "Table style to not have grey bars",
         "Pre-applied filters while generating validation report?",
-        "Dateformat to be YYYY-MM-DD [hh:mm:ss] in refresh date as well",
         "Sorting is replicated"
     ],
 }
