@@ -194,7 +194,7 @@ def main():
             )
 
             st.markdown('---')
-            st.markdown('Made with :heart: by [Sahil Choudhary](https://contact-sahil.netlify.app/)')
+            st.markdown('--')
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
 
