@@ -15,13 +15,7 @@ checklist_data = {
         "Column names matching with excel",
         "Currency symbols to be replicated",
         "Filters need to be aligned vertically/horizontally",
-        "Report Name & Package name to be written",
-        "Entire model to be refreshed before publishing to PBI service",
-        "Date Last refreshed to be removed from filter/table",
-        "Table's column header to be bold",
-        "Table style to not have grey bars",
         "Pre-applied filters while generating validation report?",
-        "Dateformat to be YYYY-MM-DD [hh:mm:ss] in refresh date as well",
         "Sorting is replicated"
     ],
     "Status - Level1": ["" for _ in range(14)],
