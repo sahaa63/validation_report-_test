@@ -7,7 +7,7 @@ import os
 
 # Define the checklist data as a DataFrame
 checklist_data = {
-    "S.No": range(1, 7),
+    "S.No": range(1, 8),
     "Checklist": [
         "All the columns of excel replicated in PBI (No extra columns)",
         "All the filters of excel replicated in PBI",
