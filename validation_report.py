@@ -79,7 +79,12 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[dim].fillna(validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[dim]))), inplace=True)
 
     # Determine presence in sheets
-        validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)
+        validation_report['presence'] = validation_report['unique_key'].apply(
+        lambda key: 'Present in Both' if key in excel_agg['unique_key'].values and key in pbi_agg['unique_key'].values
+        else ('Present in excel' if key in excel_agg['unique_key'].values
+              else 'Present in PBI')
+    )
+        
 
     # Add measures and calculate differences
     for measure in all_measures:
@@ -87,10 +92,7 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_PBI'] = validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[measure])))
         
     # Calculate difference (PBI - excel)
-        validation_report[f'{measure}_Diff'] = (
-    abs(validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) /
-    validation_report[f'{measure}_PBI'].replace(0, float('nan')) * 100
-).fillna(0)
+       validation_report[f'{measure}_Diff'] = validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)
     # Reorder columns
     column_order = ['unique_key'] + dims + ['presence'] + \
                    [col for measure in all_measures for col in 
