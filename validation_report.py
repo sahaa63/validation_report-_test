@@ -7,7 +7,7 @@ import os
 
 #Define the checklist data as a DataFrame
 checklist_data = {
-    "S.No": range(1, 15),
+    "S.No": range(1, 9),
     "Checklist": [
         "All the columns of excel replicated in PBI (No extra columns)",
         "All the filters of excel replicated in PBI",
@@ -18,8 +18,8 @@ checklist_data = {
         "Pre-applied filters while generating validation report?",
         "Sorting is replicated"
     ],
-    "Status - Level1": ["" for _ in range(14)],
-    "Status - Level2": ["" for _ in range(14)]
+    "Status - Level1": ["" for _ in range(9)],
+    "Status - Level2": ["" for _ in range(9)]
 }
 checklist_df = pd.DataFrame(checklist_data)
 
