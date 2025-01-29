@@ -64,7 +64,7 @@ def main():
     **Important Assumptions:**
     1. Upload the Excel file with two sheets: "exel" and "PBI".
     2. Make sure the column names are similar in both sheets.
-    3. If there are ID/Key/Code columns, make sure the ID or Key columns contains "_ID" or "_KEY" (case insensitive)
+    3. If there are ID/Key/Code columns, make sure the ID or Key columns contains "_ID" or "_KEY" (case insensitive) """)
    
 
     #st.markdown("Working with merged reports? unmerge them like this [link](https://www.loom.com/share/c876bb4cf67e45e7b01cd64facb6f7d8?sid=fdd1bb3e-96cf-4eaa-af3e-2a951861a8cc)")
