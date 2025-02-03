@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import io
@@ -127,17 +126,17 @@ def generate_diff_checker(validation_report):
     # Extract columns that end with "_Diff"
     diff_columns = [col for col in validation_report.columns if col.endswith('_Diff')]
 
-    # Calculate sum of differences for each Diff column
+    # Calculate Avg of differences for each Diff column
     diff_checker = pd.DataFrame({
         'Diff Column Name': diff_columns,
-        'Perc Average Difference': [f"{validation_report[col].mean():.2f}%" for col in diff_columns]
+        'Percentage Difference': [f"{validation_report[col].mean():.2f}%" for col in diff_columns]
 
     })
 
     # Add summary row for presence check
     presence_summary = {
         'Diff Column Name': 'All rows present in both',
-        'Sum of Difference': 'Yes' if all(validation_report['presence'] == 'Present in Both') else 'No'
+        'Percentage Difference': 'Yes' if all(validation_report['presence'] == 'Present in Both') else 'No'
     }
     diff_checker = pd.concat([diff_checker, pd.DataFrame([presence_summary])], ignore_index=True)
 
