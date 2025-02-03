@@ -130,7 +130,8 @@ def generate_diff_checker(validation_report):
     # Calculate sum of differences for each Diff column
     diff_checker = pd.DataFrame({
         'Diff Column Name': diff_columns,
-        'Sum of Difference': [validation_report[col].sum() for col in diff_columns]
+        'Perc Average Difference': [f"{validation_report[col].mean():.2f}%" for col in diff_columns]
+
     })
 
     # Add summary row for presence check
