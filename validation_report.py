@@ -95,8 +95,9 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_Diff'] = np.where(
     validation_report[f'{measure}_excel'].fillna(0) == 0,  # Condition: Check if e is 0
     0,  # If true, return 0
-    ((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100  # If false, calculate percentage difference
+    np.abs((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100  # If false, calculate absolute percentage difference
 )
+
 
     # Reorder columns
     column_order = ['unique_key'] + dims + ['presence'] + \
