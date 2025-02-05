@@ -100,7 +100,7 @@ def generate_validation_report(excel_df, pbi_df):
         0,  # Return 0
         100  # Return 100 if either p or e is zero
     ),
-    round(((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100 ,2) # Calculate percentage difference if both are non-zero
+    round(((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100 ,2).astype(str) + "%"  # Calculate percentage difference if both are non-zero
 )
 
         
