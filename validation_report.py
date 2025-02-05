@@ -186,7 +186,7 @@ def main():
                 # checklist_df.to_excel(writer, sheet_name='Checklist', index=False)
                 # excel_agg.to_excel(writer, sheet_name='excel', index=False)
                 # pbi_agg.to_excel(writer, sheet_name='PBI', index=False)
-                validation_report.to_excel(writer, sheet_name='Validation_Report', index=False)
+                validation_report.to_excel(writer, sheet_name='f"{original_filename}_validation_report', index=False)
                 # column_checklist_df.to_excel(writer, sheet_name='Column Checklist', index=False)
                 # diff_checker_df.to_excel(writer, sheet_name='Diff Checker', index=False)
 
