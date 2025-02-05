@@ -5,20 +5,20 @@ import numpy as np
 import os
 
 
-# Define the checklist data as a DataFrame
-checklist_data = {
-    "S.No": range(1, 8),
-    "Checklist": [
-        "All the columns of excel replicated in PBI (No extra columns)",
-        "All the filters of excel replicated in PBI",
-        "Filters working as expected (single/multi select as usual)",
-        "Column names matching with excel",
-        "Currency symbols to be replicated",
-        "Pre-applied filters while generating validation report?",
-        "Sorting is replicated"
-    ],
-}
-checklist_df = pd.DataFrame(checklist_data)
+# # Define the checklist data as a DataFrame
+# checklist_data = {
+#     "S.No": range(1, 8),
+#     "Checklist": [
+#         "All the columns of excel replicated in PBI (No extra columns)",
+#         "All the filters of excel replicated in PBI",
+#         "Filters working as expected (single/multi select as usual)",
+#         "Column names matching with excel",
+#         "Currency symbols to be replicated",
+#         "Pre-applied filters while generating validation report?",
+#         "Sorting is replicated"
+#     ],
+# }
+# checklist_df = pd.DataFrame(checklist_data)
 
 def generate_validation_report(excel_df, pbi_df):
     # Identify dimensions and measures
@@ -106,41 +106,41 @@ def generate_validation_report(excel_df, pbi_df):
 
     return validation_report, excel_agg, pbi_agg
 
-def column_checklist(excel_df, pbi_df):
-    # Get the list of columns in each DataFrame
-    excel_columns = excel_df.columns.tolist()
-    pbi_columns = pbi_df.columns.tolist()
+# def column_checklist(excel_df, pbi_df):
+#     # Get the list of columns in each DataFrame
+#     excel_columns = excel_df.columns.tolist()
+#     pbi_columns = pbi_df.columns.tolist()
 
-    # Create a new DataFrame for checklist
-    checklist_df = pd.DataFrame({
-        'excel Columns': excel_columns + [''] * (max(len(pbi_columns), len(excel_columns)) - len(excel_columns)),
-        'PowerBI Columns': pbi_columns + [''] * (max(len(pbi_columns), len(excel_columns)) - len(pbi_columns))
-    })
+#     # Create a new DataFrame for checklist
+#     checklist_df = pd.DataFrame({
+#         'excel Columns': excel_columns + [''] * (max(len(pbi_columns), len(excel_columns)) - len(excel_columns)),
+#         'PowerBI Columns': pbi_columns + [''] * (max(len(pbi_columns), len(excel_columns)) - len(pbi_columns))
+#     })
 
-    # Check if columns match
-    checklist_df['Match'] = checklist_df.apply(lambda row: row['excel Columns'] == row['PowerBI Columns'], axis=1)
+#     # Check if columns match
+#     checklist_df['Match'] = checklist_df.apply(lambda row: row['excel Columns'] == row['PowerBI Columns'], axis=1)
     
-    return checklist_df
+#     return checklist_df
 
-def generate_diff_checker(validation_report):
-    # Extract columns that end with "_Diff"
-    diff_columns = [col for col in validation_report.columns if col.endswith('_Diff')]
+# def generate_diff_checker(validation_report):
+#     # Extract columns that end with "_Diff"
+#     diff_columns = [col for col in validation_report.columns if col.endswith('_Diff')]
 
-    # Calculate Avg of differences for each Diff column
-    diff_checker = pd.DataFrame({
-        'Diff Column Name': diff_columns,
-        'Percentage Difference': [f"{validation_report[col].mean():.2f}%" for col in diff_columns]
+#     # Calculate Avg of differences for each Diff column
+#     diff_checker = pd.DataFrame({
+#         'Diff Column Name': diff_columns,
+#         'Percentage Difference': [f"{validation_report[col].mean():.2f}%" for col in diff_columns]
 
-    })
+#     })
 
-    # Add summary row for presence check
-    presence_summary = {
-        'Diff Column Name': 'All rows present in both',
-        'Percentage Difference': 'Yes' if all(validation_report['presence'] == 'Present in Both') else 'No'
-    }
-    diff_checker = pd.concat([diff_checker, pd.DataFrame([presence_summary])], ignore_index=True)
+#     # Add summary row for presence check
+#     presence_summary = {
+#         'Diff Column Name': 'All rows present in both',
+#         'Percentage Difference': 'Yes' if all(validation_report['presence'] == 'Present in Both') else 'No'
+#     }
+#     diff_checker = pd.concat([diff_checker, pd.DataFrame([presence_summary])], ignore_index=True)
 
-    return diff_checker
+#     return diff_checker
 
 def main():
     st.title("Validation Report Generator")
@@ -165,8 +165,8 @@ def main():
             pbi_df = pbi_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
 
             validation_report, excel_agg, pbi_agg = generate_validation_report(excel_df, pbi_df)
-            column_checklist_df = column_checklist(excel_df, pbi_df)
-            diff_checker_df = generate_diff_checker(validation_report)
+            # column_checklist_df = column_checklist(excel_df, pbi_df)
+            # diff_checker_df = generate_diff_checker(validation_report)
 
             st.subheader("Validation Report Preview")
             st.dataframe(validation_report)
@@ -174,12 +174,12 @@ def main():
             # Generate Excel file for download
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                checklist_df.to_excel(writer, sheet_name='Checklist', index=False)
-                excel_agg.to_excel(writer, sheet_name='excel', index=False)
-                pbi_agg.to_excel(writer, sheet_name='PBI', index=False)
+                # checklist_df.to_excel(writer, sheet_name='Checklist', index=False)
+                # excel_agg.to_excel(writer, sheet_name='excel', index=False)
+                # pbi_agg.to_excel(writer, sheet_name='PBI', index=False)
                 validation_report.to_excel(writer, sheet_name='Validation_Report', index=False)
-                column_checklist_df.to_excel(writer, sheet_name='Column Checklist', index=False)
-                diff_checker_df.to_excel(writer, sheet_name='Diff Checker', index=False)
+                # column_checklist_df.to_excel(writer, sheet_name='Column Checklist', index=False)
+                # diff_checker_df.to_excel(writer, sheet_name='Diff Checker', index=False)
 
             output.seek(0)
             original_filename = os.path.splitext(uploaded_file.name)[0]
