@@ -93,7 +93,7 @@ def generate_validation_report(excel_df, pbi_df):
         
     # Calculate difference (PBI - excel)
     
-        validation_report[f'{measure}_Diff'] = np.where(
+        validation_report[f'{measure}_Diff'] = round(np.where(
     (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),  # Condition: p = 0 or e = 0
     np.where(
         (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report[f'{measure}_excel'].fillna(0) == 0),  # Both p and e are 0
@@ -101,7 +101,7 @@ def generate_validation_report(excel_df, pbi_df):
         100  # Return 100 if either p or e is zero
     ),
     ((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100  # Calculate percentage difference if both are non-zero
-)
+),2)
 
         
 
