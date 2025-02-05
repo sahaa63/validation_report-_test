@@ -92,7 +92,8 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_PBI'] = validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[measure])))
         
     # Calculate difference (PBI - excel)
-        result = np.where(
+    
+        validation_report[f'{measure}_Diff'] = np.where(
     (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),  # Condition: p = 0 or e = 0
     np.where(
         (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report[f'{measure}_excel'].fillna(0) == 0),  # Both p and e are 0
@@ -101,8 +102,6 @@ def generate_validation_report(excel_df, pbi_df):
     ),
     ((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100  # Calculate percentage difference if both are non-zero
 )
-    
-        validation_report[f'{measure}_Diff'] = [f"{x:.2f}%" for x in result]
         
 
 # Format the output as .2f%
