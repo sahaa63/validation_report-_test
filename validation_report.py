@@ -182,11 +182,13 @@ def main():
 
             # Generate Excel file for download
             output = io.BytesIO()
+            original_sheetname = os.path.splitext(uploaded_file.name)[0]
+            new_sheetname = f"{original_sheetname}_validation_report"
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 # checklist_df.to_excel(writer, sheet_name='Checklist', index=False)
                 # excel_agg.to_excel(writer, sheet_name='excel', index=False)
                 # pbi_agg.to_excel(writer, sheet_name='PBI', index=False)
-                validation_report.to_excel(writer, sheet_name='validation_report', index=False)
+                validation_report.to_excel(writer, sheet_name=new_sheetname, index=False)
                 # column_checklist_df.to_excel(writer, sheet_name='Column Checklist', index=False)
                 # diff_checker_df.to_excel(writer, sheet_name='Diff Checker', index=False)
 
