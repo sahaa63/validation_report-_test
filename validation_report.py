@@ -100,7 +100,7 @@ def generate_validation_report(excel_df, pbi_df):
         0,  # Return 0
         100  # Return 100 if either p or e is zero
     ),
-    round(((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100 ,2)  # Calculate percentage difference if both are non-zero
+    abs(round(((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100 ,2))  # Calculate percentage difference if both are non-zero
 )
 
         
@@ -182,12 +182,11 @@ def main():
 
             # Generate Excel file for download
             output = io.BytesIO()
-            original_filename = os.path.splitext(uploaded_file.name)[0]
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 # checklist_df.to_excel(writer, sheet_name='Checklist', index=False)
                 # excel_agg.to_excel(writer, sheet_name='excel', index=False)
                 # pbi_agg.to_excel(writer, sheet_name='PBI', index=False)
-                validation_report.to_excel(writer, sheet_name='f"{original_filename}_validation_report', index=False)
+                validation_report.to_excel(writer, sheet_name='validation_report', index=False)
                 # column_checklist_df.to_excel(writer, sheet_name='Column Checklist', index=False)
                 # diff_checker_df.to_excel(writer, sheet_name='Diff Checker', index=False)
 
