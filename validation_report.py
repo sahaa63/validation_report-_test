@@ -182,6 +182,7 @@ def main():
 
             # Generate Excel file for download
             output = io.BytesIO()
+            output.seek(0)
             original_sheetname = os.path.splitext(uploaded_file.name)[0]
             new_sheetname = f"{original_sheetname}_validation_report"
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
