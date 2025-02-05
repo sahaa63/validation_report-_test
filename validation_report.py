@@ -182,6 +182,7 @@ def main():
 
             # Generate Excel file for download
             output = io.BytesIO()
+            original_filename = os.path.splitext(uploaded_file.name)[0]
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 # checklist_df.to_excel(writer, sheet_name='Checklist', index=False)
                 # excel_agg.to_excel(writer, sheet_name='excel', index=False)
