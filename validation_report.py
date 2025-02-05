@@ -97,20 +97,11 @@ def generate_validation_report(excel_df, pbi_df):
     (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),  # Condition: p = 0 or e = 0
     np.where(
         (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report[f'{measure}_excel'].fillna(0) == 0),  # Both p and e are 0
-        "0.00%",  # Return formatted string "0.00%"
-        "100.00%"  # Return formatted string "100.00%" if either p or e is zero
+        0,  # Return 0
+        100  # Return 100 if either p or e is zero
     ),
-    # Calculate percentage difference if both are non-zero and format as .2f%
-    ((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100  # Calculate percentage difference
+    ((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / validation_report[f'{measure}_excel'].fillna(0)) * 100  # Calculate percentage difference if both are non-zero
 )
-
-# Apply formatting for non-zero cases
-    validation_report[f'{measure}_Diff'] = np.where(
-    (validation_report[f'{measure}_PBI'].fillna(0) != 0) & (validation_report[f'{measure}_excel'].fillna(0) != 0),
-    [f"{x:.2f}%" for x in validation_report[f'{measure}_Diff']],
-    validation_report[f'{measure}_Diff']
-)
-
 
         
 
