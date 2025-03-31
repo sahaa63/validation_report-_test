@@ -73,7 +73,7 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_Diff'] = np.where(
             (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),
             np.where(
-                (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report F'{measure}_excel'].fillna(0) == 0),
+                (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report[f'{measure}_excel'].fillna(0) == 0),
                 0,
                 1
             ),
@@ -119,20 +119,16 @@ def generate_diff_checker(validation_report):
     return diff_checker
 
 def apply_conditional_formatting(ws, validation_report):
-    # Updated colors
-    dark_green_fill = PatternFill(start_color='006400', end_color='006400', fill_type='solid')  # Darker green
-    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')     # Middle yellow
-    dark_red_fill = PatternFill(start_color='8B0000', end_color='8B0000', fill_type='solid')   # Darker orange/red
+    dark_green_fill = PatternFill(start_color='006400', end_color='006400', fill_type='solid')
+    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+    dark_red_fill = PatternFill(start_color='8B0000', end_color='8B0000', fill_type='solid')
 
-    # Find column indices
     diff_cols = [col for col in validation_report.columns if col.endswith('_Diff')]
-    presence_col_idx = validation_report.columns.get_loc('presence') + 1  # +1 for Excel 1-based indexing
+    presence_col_idx = validation_report.columns.get_loc('presence') + 1
     
-    # Format all columns
     for col_idx, col_name in enumerate(validation_report.columns, 1):
         col_letter = get_column_letter(col_idx)
         
-        # Format Diff columns
         if col_name.endswith('_Diff'):
             header_cell = ws[f'{col_letter}1']
             header_cell.number_format = '0.00%'
@@ -147,15 +143,14 @@ def apply_conditional_formatting(ws, validation_report):
                         cell.fill = dark_green_fill
                     elif value <= 0.75:
                         ratio = (value - 0.25) / 0.5
-                        r = int(255 + (139 - 255) * ratio)  # From yellow (255) to dark red (139)
-                        g = int(255 - (255 - 0) * ratio)    # From yellow (255) to dark red (0)
-                        b = int(0)                          # Keep blue at 0
+                        r = int(255 + (139 - 255) * ratio)
+                        g = int(255 - (255 - 0) * ratio)
+                        b = int(0)
                         color = f'{r:02X}{g:02X}{b:02X}'
                         cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
                     else:
                         cell.fill = dark_red_fill
         
-        # Format presence column
         elif col_idx == presence_col_idx:
             for row_idx, value in enumerate(validation_report[col_name], 2):
                 cell = ws[f'{col_letter}{row_idx}']
@@ -182,7 +177,6 @@ def main():
             excel_df = pd.read_excel(xls, 'excel')
             pbi_df = pd.read_excel(xls, 'PBI')
 
-            # Convert all string columns to uppercase and trim whitespace
             excel_df = excel_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
             pbi_df = pbi_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
 
@@ -197,7 +191,6 @@ def main():
                     display_report[col] = display_report[col].apply(lambda x: f"{x*100:.2f}%" if pd.notna(x) else x)
             st.dataframe(display_report)
 
-            # Generate Excel file for download
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 validation_report.to_excel(writer, sheet_name='validation_report', index=False)
