@@ -139,10 +139,10 @@ def apply_conditional_formatting(ws, validation_report):
                     cell.value = value
                     cell.number_format = '0.00%'
                     
-                    if value <= 0.25:
+                    if value <= 0.1:
                         cell.fill = dark_green_fill
-                    elif value <= 0.75:
-                        ratio = (value - 0.25) / 0.5
+                    elif value <= 0.5:
+                        ratio = (value - 0.1) / 0.5
                         r = int(255 + (139 - 255) * ratio)
                         g = int(255 - (255 - 0) * ratio)
                         b = int(0)
