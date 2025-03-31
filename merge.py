@@ -2,7 +2,14 @@ import streamlit as st
 import pandas as pd
 import io
 import os
-from openpyxl import Workbook  # Changed from load_workbook to Workbook for new file creation
+import sys
+
+# Check for openpyxl availability
+try:
+    from openpyxl import Workbook, load_workbook
+except ImportError:
+    st.error("The 'openpyxl' library is not installed. Please ensure it's included in your requirements.txt and the environment is set up correctly.")
+    st.stop()
 
 # Custom CSS for styling with improved contrast
 st.markdown("""
@@ -15,8 +22,8 @@ st.markdown("""
         margin-bottom: 20px;
     }
     .instructions {
-        background-color: #F0F8FF;  /* Light blue background */
-        color: #333333;  /* Dark gray text for contrast */
+        background-color: #F0F8FF;
+        color: #333333;
         padding: 15px;
         border-radius: 10px;
         border-left: 5px solid #4682B4;
@@ -78,7 +85,11 @@ def combine_excel_files(file_list):
     # Process each uploaded file
     for uploaded_file in file_list:
         file_bytes = uploaded_file.read()
-        wb = load_workbook(filename=io.BytesIO(file_bytes))
+        try:
+            wb = load_workbook(filename=io.BytesIO(file_bytes))
+        except Exception as e:
+            st.error(f"Error reading file {uploaded_file.name}: {str(e)}")
+            return None, None
 
         for sheet_name in wb.sheetnames:
             base_sheet_name = sheet_name
@@ -95,7 +106,7 @@ def combine_excel_files(file_list):
                 for cell in row:
                     ws_target[cell.coordinate].value = cell.value
 
-    # Remove default sheet if it exists (created by Workbook())
+    # Remove default sheet if it exists
     if 'Sheet' in output_wb.sheetnames:
         output_wb.remove(output_wb['Sheet'])
 
