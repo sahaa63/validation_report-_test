@@ -193,12 +193,16 @@ def main():
 
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                validation_report.to_excel(writer, sheet_name='validation_report', index=False)
-                ws = writer.sheets['validation_report']
+                original_filename = os.path.splitext(uploaded_file.name)[0]
+                sheet_name = f"{original_filename}_validation_report"
+                # Ensure sheet name doesn't exceed Excel's 31 character limit
+                if len(sheet_name) > 31:
+                    sheet_name = sheet_name[:31]
+                validation_report.to_excel(writer, sheet_name=sheet_name, index=False)
+                ws = writer.sheets[sheet_name]
                 apply_conditional_formatting(ws, validation_report)
 
             output.seek(0)
-            original_filename = os.path.splitext(uploaded_file.name)[0]
             new_file_name = f"{original_filename}_validation_report.xlsx"
             st.download_button(
                 label="Download Excel Report",
