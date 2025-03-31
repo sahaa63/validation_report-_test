@@ -187,8 +187,8 @@ def main():
     <h3 style="color: #4682B4;">How to Use:</h3>
     <ul>
         <li>Upload up to 10 Excel files using the button below.</li>
-        <li>All sheets from each file will be merged into one awesome output file <strong>in the order you upload them</strong>.</li>
-        <li>Duplicate sheet names will get a cool numeric suffix (e.g., 'Sheet_1').</li>
+        <li>All sheets from each file will be merged into one output file <strong>in the order you upload them</strong>.</li>
+        <li>Duplicate sheet names will get a numeric suffix (e.g., 'Sheet_1').</li>
         <li>The output file will be named based on your first file (e.g., 'Report_validation_report.xlsx').</li>
     </ul>
     </div>
