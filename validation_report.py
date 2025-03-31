@@ -119,9 +119,9 @@ def generate_diff_checker(validation_report):
     return diff_checker
 
 def apply_conditional_formatting(ws, validation_report):
-    dark_green_fill = PatternFill(start_color='006400', end_color='006400', fill_type='solid')
-    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-    dark_red_fill = PatternFill(start_color='8B0000', end_color='8B0000', fill_type='solid')
+    dark_green_fill = PatternFill(start_color='19D119', end_color='19D119', fill_type='solid')
+    yellow_fill = PatternFill(start_color='E4E81B', end_color='E4E81B', fill_type='solid')
+    dark_red_fill = PatternFill(start_color='E82D1C', end_color='E82D1C', fill_type='solid')
 
     diff_cols = [col for col in validation_report.columns if col.endswith('_Diff')]
     presence_col_idx = validation_report.columns.get_loc('presence') + 1
