@@ -125,12 +125,10 @@ def combine_excel_files(file_list):
     output_buffer = io.BytesIO()
     output_wb = Workbook()
 
-    # List to maintain sheet order
-    sheet_order = []
     # Dictionary to track sheet names and avoid duplicates
     sheet_name_count = {}
 
-    # Process each uploaded file in order
+    # Process each uploaded file
     for uploaded_file in file_list:
         file_bytes = uploaded_file.read()
         try:
@@ -139,7 +137,7 @@ def combine_excel_files(file_list):
             st.error(f"Error reading file {uploaded_file.name}: {str(e)}")
             return None, None
 
-        for sheet_name in wb.sheetnames:  # Preserve order within each file
+        for sheet_name in wb.sheetnames:
             base_sheet_name = sheet_name
             if sheet_name in sheet_name_count:
                 sheet_name_count[sheet_name] += 1
@@ -153,14 +151,10 @@ def combine_excel_files(file_list):
             for row in ws_source.rows:
                 for cell in row:
                     ws_target[cell.coordinate].value = cell.value
-            sheet_order.append(new_sheet_name)
 
     # Remove default sheet if it exists
     if 'Sheet' in output_wb.sheetnames:
         output_wb.remove(output_wb['Sheet'])
-
-    # Reorder sheets according to upload order
-    output_wb._sheets = [output_wb[sheet] for sheet in sheet_order]
 
     # Apply conditional formatting to all sheets
     for sheet_name in output_wb.sheetnames:
@@ -180,7 +174,7 @@ def main():
     <h3 style="color: #4682B4;">How to Use:</h3>
     <ul>
         <li>Upload up to 10 Excel files using the button below.</li>
-        <li>All sheets from each file will be merged into one awesome output file <strong>in the order you upload them</strong>.</li>
+        <li>All sheets from each file will be merged into one awesome output file.</li>
         <li>Duplicate sheet names will get a cool numeric suffix (e.g., 'Sheet_1').</li>
         <li>The output file will be named based on your first file (e.g., 'Report_validation_report.xlsx').</li>
     </ul>
@@ -191,7 +185,7 @@ def main():
         "Drop Your Excel Files Here!",
         type=["xlsx", "xls"],
         accept_multiple_files=True,
-        help="Upload up to 10 Excel files to merge into one. Sheets will appear in upload order.",
+        help="Upload up to 10 Excel files to merge into one.",
         key="file_uploader"
     )
 
