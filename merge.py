@@ -119,9 +119,13 @@ def combine_excel_files(file_list):
     if not file_list or len(file_list) > 10:
         return None, None
 
-    # Extract original filename from the first file
+    # Extract original filename from the first file and clean it
     first_filename = os.path.splitext(file_list[0].name)[0]
-    original_filename = first_filename[:-1] if first_filename[-1].isdigit() else first_filename
+    # Remove '_validation_report' if it exists in the filename
+    if '_validation_report' in first_filename:
+        original_filename = first_filename.replace('_validation_report', '')
+    else:
+        original_filename = first_filename[:-1] if first_filename[-1].isdigit() else first_filename
     output_filename = f"{original_filename}_validation_report.xlsx"
 
     # Create a new workbook in memory
