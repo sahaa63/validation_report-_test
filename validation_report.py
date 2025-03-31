@@ -21,7 +21,7 @@ checklist_data = {
 }
 checklist_df = pd.DataFrame(checklist_data)
 
-def generate_validation_report(excel_df, pbi_df):
+def generate_validation_report(excel_df, pbi_df, page_name):
     # Identify dimensions and measures
     dims = [col for col in excel_df.columns if col in pbi_df.columns and 
             (excel_df[col].dtype == 'object' or '_id' in col.lower() or '_key' in col.lower() or
@@ -69,7 +69,6 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_excel'] = validation_report['unique_key'].map(dict(zip(excel_agg['unique_key'], excel_agg[measure])))
         validation_report[f'{measure}_PBI'] = validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[measure])))
         
-        # Calculate difference (keeping as decimal between 0 and 1)
         validation_report[f'{measure}_Diff'] = np.where(
             (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),
             np.where(
@@ -164,9 +163,9 @@ def main():
 
     st.markdown("""
     **Important Assumptions:**
-    1. Upload the Excel file with two sheets: "excel" and "PBI".
-    2. Make sure the column names are similar in both sheets.
-    3. If there are ID/Key/Code columns, make sure the ID or Key columns contains "_ID" or "_KEY" (case insensitive)
+    1. Upload an Excel file with paired sheets named as 'PageX_excel' and 'PageX_PBI' (e.g., Page1_excel, Page1_PBI, Page2_excel, Page2_PBI).
+    2. Make sure the column names are similar in paired sheets.
+    3. If there are ID/Key/Code columns, ensure they contain '_ID' or '_KEY' (case insensitive).
     """)
 
     uploaded_file = st.file_uploader("Upload Excel file", type="xlsx")
@@ -174,28 +173,55 @@ def main():
     if uploaded_file is not None:
         try:
             xls = pd.ExcelFile(uploaded_file)
-            excel_df = pd.read_excel(xls, 'excel')
-            pbi_df = pd.read_excel(xls, 'PBI')
+            sheet_names = xls.sheet_names
+            
+            # Identify page pairs
+            excel_sheets = [s for s in sheet_names if s.endswith('_excel')]
+            page_numbers = sorted(set(s.split('_')[0] for s in excel_sheets))
+            
+            validation_reports = {}
+            column_checklists = {}
+            diff_checkers = {}
 
-            excel_df = excel_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
-            pbi_df = pbi_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
+            # Process each page pair
+            for page in page_numbers:
+                excel_sheet = f"{page}_excel"
+                pbi_sheet = f"{page}_PBI"
+                
+                if excel_sheet in sheet_names and pbi_sheet in sheet_names:
+                    excel_df = pd.read_excel(xls, excel_sheet)
+                    pbi_df = pd.read_excel(xls, pbi_sheet)
 
-            validation_report, excel_agg, pbi_agg = generate_validation_report(excel_df, pbi_df)
-            column_checklist_df = column_checklist(excel_df, pbi_df)
-            diff_checker_df = generate_diff_checker(validation_report)
+                    # Convert strings to uppercase and trim
+                    excel_df = excel_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
+                    pbi_df = pbi_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
 
-            st.subheader("Validation Report Preview")
-            display_report = validation_report.copy()
-            for col in display_report.columns:
-                if col.endswith('_Diff'):
-                    display_report[col] = display_report[col].apply(lambda x: f"{x*100:.2f}%" if pd.notna(x) else x)
-            st.dataframe(display_report)
+                    # Generate reports for this page
+                    validation_report, excel_agg, pbi_agg = generate_validation_report(excel_df, pbi_df, page)
+                    column_checklist_df = column_checklist(excel_df, pbi_df)
+                    diff_checker_df = generate_diff_checker(validation_report)
 
+                    validation_reports[page] = validation_report
+                    column_checklists[page] = column_checklist_df
+                    diff_checkers[page] = diff_checker_df
+
+            # Display previews
+            for page, report in validation_reports.items():
+                st.subheader(f"Validation Report Preview - {page}")
+                display_report = report.copy()
+                for col in display_report.columns:
+                    if col.endswith('_Diff'):
+                        display_report[col] = display_report[col].apply(lambda x: f"{x*100:.2f}%" if pd.notna(x) else x)
+                st.dataframe(display_report)
+
+            # Generate Excel file with multiple sheets
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                validation_report.to_excel(writer, sheet_name='validation_report', index=False)
-                ws = writer.sheets['validation_report']
-                apply_conditional_formatting(ws, validation_report)
+                for page, report in validation_reports.items():
+                    sheet_name = f'validation_report_{page.lower()}'
+                    report.to_excel(writer, sheet_name=sheet_name, index=False)
+                    ws = writer.sheets[sheet_name]
+                    apply_conditional_formatting(ws, report)
 
             output.seek(0)
             original_filename = os.path.splitext(uploaded_file.name)[0]
