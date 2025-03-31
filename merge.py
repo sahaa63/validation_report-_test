@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import io
 import os
-from openpyxl import load_workbook
+from openpyxl import Workbook  # Changed from load_workbook to Workbook for new file creation
 
-# Custom CSS for styling
+# Custom CSS for styling with improved contrast
 st.markdown("""
     <style>
     .title {
@@ -15,7 +15,8 @@ st.markdown("""
         margin-bottom: 20px;
     }
     .instructions {
-        background-color: #F0F8FF;
+        background-color: #F0F8FF;  /* Light blue background */
+        color: #333333;  /* Dark gray text for contrast */
         padding: 15px;
         border-radius: 10px;
         border-left: 5px solid #4682B4;
@@ -23,6 +24,7 @@ st.markdown("""
     }
     .file-list {
         background-color: #F5F5F5;
+        color: #333333;
         padding: 10px;
         border-radius: 5px;
         margin-top: 10px;
@@ -40,6 +42,7 @@ st.markdown("""
     }
     .success-box {
         background-color: #E6FFE6;
+        color: #333333;
         padding: 15px;
         border-radius: 10px;
         border-left: 5px solid #2ECC71;
@@ -47,6 +50,7 @@ st.markdown("""
     }
     .error-box {
         background-color: #FFE6E6;
+        color: #333333;
         padding: 15px;
         border-radius: 10px;
         border-left: 5px solid #FF4B4B;
@@ -66,7 +70,7 @@ def combine_excel_files(file_list):
 
     # Create a new workbook in memory
     output_buffer = io.BytesIO()
-    output_wb = load_workbook(filename=output_buffer)
+    output_wb = Workbook()  # Create a new blank workbook
 
     # Dictionary to track sheet names and avoid duplicates
     sheet_name_count = {}
@@ -91,7 +95,7 @@ def combine_excel_files(file_list):
                 for cell in row:
                     ws_target[cell.coordinate].value = cell.value
 
-    # Remove default sheet if it exists
+    # Remove default sheet if it exists (created by Workbook())
     if 'Sheet' in output_wb.sheetnames:
         output_wb.remove(output_wb['Sheet'])
 
@@ -105,7 +109,7 @@ def main():
     # Title with custom styling
     st.markdown('<div class="title">Excel File Merger</div>', unsafe_allow_html=True)
 
-    # Instructions box
+    # Instructions box with improved contrast
     st.markdown("""
     <div class="instructions">
     <h3 style="color: #4682B4;">How to Use:</h3>
