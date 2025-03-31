@@ -73,7 +73,7 @@ def generate_validation_report(excel_df, pbi_df):
         validation_report[f'{measure}_Diff'] = np.where(
             (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),
             np.where(
-                (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report[f'{measure}_excel'].fillna(0) == 0),
+                (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report F'{measure}_excel'].fillna(0) == 0),
                 0,
                 1
             ),
@@ -119,21 +119,24 @@ def generate_diff_checker(validation_report):
     return diff_checker
 
 def apply_conditional_formatting(ws, validation_report):
-    green_fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type='solid')
-    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-    orange_fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type='solid')
+    # Updated colors
+    dark_green_fill = PatternFill(start_color='006400', end_color='006400', fill_type='solid')  # Darker green
+    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')     # Middle yellow
+    dark_red_fill = PatternFill(start_color='8B0000', end_color='8B0000', fill_type='solid')   # Darker orange/red
 
+    # Find column indices
     diff_cols = [col for col in validation_report.columns if col.endswith('_Diff')]
+    presence_col_idx = validation_report.columns.get_loc('presence') + 1  # +1 for Excel 1-based indexing
     
+    # Format all columns
     for col_idx, col_name in enumerate(validation_report.columns, 1):
+        col_letter = get_column_letter(col_idx)
+        
+        # Format Diff columns
         if col_name.endswith('_Diff'):
-            col_letter = get_column_letter(col_idx)
-            
-            # Format header
             header_cell = ws[f'{col_letter}1']
             header_cell.number_format = '0.00%'
             
-            # Apply formatting to data cells
             for row_idx, value in enumerate(validation_report[col_name], 2):
                 cell = ws[f'{col_letter}{row_idx}']
                 if pd.notna(value):
@@ -141,16 +144,25 @@ def apply_conditional_formatting(ws, validation_report):
                     cell.number_format = '0.00%'
                     
                     if value <= 0.25:
-                        cell.fill = green_fill
+                        cell.fill = dark_green_fill
                     elif value <= 0.75:
                         ratio = (value - 0.25) / 0.5
-                        r = int(255 + (255 - 255) * ratio)
-                        g = int(255 - (255 - 165) * ratio)
-                        b = int(0 + (0 - 0) * ratio)
+                        r = int(255 + (139 - 255) * ratio)  # From yellow (255) to dark red (139)
+                        g = int(255 - (255 - 0) * ratio)    # From yellow (255) to dark red (0)
+                        b = int(0)                          # Keep blue at 0
                         color = f'{r:02X}{g:02X}{b:02X}'
                         cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
                     else:
-                        cell.fill = orange_fill
+                        cell.fill = dark_red_fill
+        
+        # Format presence column
+        elif col_idx == presence_col_idx:
+            for row_idx, value in enumerate(validation_report[col_name], 2):
+                cell = ws[f'{col_letter}{row_idx}']
+                if value == 'Present in Both':
+                    cell.fill = dark_green_fill
+                elif value in ['Present in excel', 'Present in PBI']:
+                    cell.fill = dark_red_fill
 
 def main():
     st.title("Validation Report Generator")
@@ -179,7 +191,6 @@ def main():
             diff_checker_df = generate_diff_checker(validation_report)
 
             st.subheader("Validation Report Preview")
-            # Convert diff columns to percentage for Streamlit display
             display_report = validation_report.copy()
             for col in display_report.columns:
                 if col.endswith('_Diff'):
