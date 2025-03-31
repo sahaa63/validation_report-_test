@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import io
 import os
-import sys
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import PatternFill
+from openpyxl.utils import get_column_letter
 
 # Check for openpyxl availability
 try:
@@ -66,6 +68,50 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+def apply_conditional_formatting(ws, sheet_name, wb):
+    # Load the sheet data into a DataFrame for easier column access
+    df = pd.read_excel(io.BytesIO(wb.save_to_buffer().getvalue()), sheet_name=sheet_name)
+
+    dark_green_fill = PatternFill(start_color='19D119', end_color='19D119', fill_type='solid')
+    yellow_fill = PatternFill(start_color='E4E81B', end_color='E4E81B', fill_type='solid')
+    dark_red_fill = PatternFill(start_color='E82D1C', end_color='E82D1C', fill_type='solid')
+
+    diff_cols = [col for col in df.columns if col.endswith('_Diff')]
+    presence_col_idx = df.columns.get_loc('presence') + 1 if 'presence' in df.columns else None
+    
+    for col_idx, col_name in enumerate(df.columns, 1):
+        col_letter = get_column_letter(col_idx)
+        
+        if col_name.endswith('_Diff'):
+            header_cell = ws[f'{col_letter}1']
+            header_cell.number_format = '0.00%'
+            
+            for row_idx, value in enumerate(df[col_name], 2):
+                cell = ws[f'{col_letter}{row_idx}']
+                if pd.notna(value):
+                    cell.value = value
+                    cell.number_format = '0.00%'
+                    
+                    if value <= 0.1:
+                        cell.fill = dark_green_fill
+                    elif value <= 0.5:
+                        ratio = (value - 0.1) / 0.5
+                        r = int(255 + (139 - 255) * ratio)
+                        g = int(255 - (255 - 0) * ratio)
+                        b = int(0)
+                        color = f'{r:02X}{g:02X}{b:02X}'
+                        cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
+                    else:
+                        cell.fill = dark_red_fill
+        
+        elif presence_col_idx and col_idx == presence_col_idx:
+            for row_idx, value in enumerate(df[col_name], 2):
+                cell = ws[f'{col_letter}{row_idx}']
+                if value == 'Present in Both':
+                    cell.fill = dark_green_fill
+                elif value in ['Present in excel', 'Present in PBI']:
+                    cell.fill = dark_red_fill
+
 def combine_excel_files(file_list):
     if not file_list or len(file_list) > 10:
         return None, None
@@ -77,12 +123,14 @@ def combine_excel_files(file_list):
 
     # Create a new workbook in memory
     output_buffer = io.BytesIO()
-    output_wb = Workbook()  # Create a new blank workbook
+    output_wb = Workbook()
 
+    # List to maintain sheet order
+    sheet_order = []
     # Dictionary to track sheet names and avoid duplicates
     sheet_name_count = {}
 
-    # Process each uploaded file
+    # Process each uploaded file in order
     for uploaded_file in file_list:
         file_bytes = uploaded_file.read()
         try:
@@ -91,7 +139,7 @@ def combine_excel_files(file_list):
             st.error(f"Error reading file {uploaded_file.name}: {str(e)}")
             return None, None
 
-        for sheet_name in wb.sheetnames:
+        for sheet_name in wb.sheetnames:  # Preserve order within each file
             base_sheet_name = sheet_name
             if sheet_name in sheet_name_count:
                 sheet_name_count[sheet_name] += 1
@@ -105,10 +153,18 @@ def combine_excel_files(file_list):
             for row in ws_source.rows:
                 for cell in row:
                     ws_target[cell.coordinate].value = cell.value
+            sheet_order.append(new_sheet_name)
 
     # Remove default sheet if it exists
     if 'Sheet' in output_wb.sheetnames:
         output_wb.remove(output_wb['Sheet'])
+
+    # Reorder sheets according to upload order
+    output_wb._sheets = [output_wb[sheet] for sheet in sheet_order]
+
+    # Apply conditional formatting to all sheets
+    for sheet_name in output_wb.sheetnames:
+        apply_conditional_formatting(output_wb[sheet_name], sheet_name, output_wb)
 
     # Save to buffer
     output_wb.save(output_buffer)
@@ -117,28 +173,25 @@ def combine_excel_files(file_list):
     return output_buffer, output_filename
 
 def main():
-    # Title with custom styling
     st.markdown('<div class="title">Excel File Merger</div>', unsafe_allow_html=True)
 
-    # Instructions box with improved contrast
     st.markdown("""
     <div class="instructions">
     <h3 style="color: #4682B4;">How to Use:</h3>
     <ul>
         <li>Upload up to 10 Excel files using the button below.</li>
-        <li>All sheets from each file will be merged into one awesome output file.</li>
+        <li>All sheets from each file will be merged into one awesome output file <strong>in the order you upload them</strong>.</li>
         <li>Duplicate sheet names will get a cool numeric suffix (e.g., 'Sheet_1').</li>
         <li>The output file will be named based on your first file (e.g., 'Report_validation_report.xlsx').</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
 
-    # File uploader with colorful styling
     uploaded_files = st.file_uploader(
         "Drop Your Excel Files Here!",
         type=["xlsx", "xls"],
         accept_multiple_files=True,
-        help="Upload up to 10 Excel files to merge into one.",
+        help="Upload up to 10 Excel files to merge into one. Sheets will appear in upload order.",
         key="file_uploader"
     )
 
@@ -149,13 +202,11 @@ def main():
                 unsafe_allow_html=True
             )
         else:
-            # Display uploaded files in a styled box
             st.markdown(f'<div class="file-list"><strong>Uploaded {len(uploaded_files)} File(s):</strong>', unsafe_allow_html=True)
             for file in uploaded_files:
                 st.markdown(f"- {file.name}", unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Combine files and provide download
             with st.spinner("Merging your files... Hang tight!"):
                 result = combine_excel_files(uploaded_files)
                 if result:
