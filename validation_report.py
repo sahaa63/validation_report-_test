@@ -219,7 +219,7 @@ def main():
 
     uploaded_file = st.file_uploader(
         "Drop Your Excel File Here!",
-        type=["xlsx"],
+        type=["xls","xlsx"],
         help="Upload an Excel file with 'excel' and 'PBI' sheets."
     )
 
