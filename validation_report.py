@@ -5,6 +5,7 @@ import numpy as np
 import os
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
+import base64  # For base64 image encoding
 
 # Define the checklist data as a DataFrame
 checklist_data = {
@@ -202,6 +203,11 @@ def apply_conditional_formatting(ws, validation_report):
                 elif value in ['Present in excel', 'Present in PBI']:
                     cell.fill = dark_red_fill
 
+# Function to encode local image as base64
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
 def main():
     st.markdown('<div class="title">Validation Report Generator</div>', unsafe_allow_html=True)
 
@@ -276,6 +282,30 @@ def main():
                     f'<div class="error-box">Oops! An error occurred: {str(e)}</div>',
                     unsafe_allow_html=True
                 )
+
+    # Fancy Footer with Local Image (Sigmoid_Logo.jpg) in Left Upper Corner
+    try:
+        image_base64 = get_base64_image("Sigmoid_Logo.jpg")
+        image_src = f"data:image/jpeg;base64,{image_base64}"
+    except FileNotFoundError:
+        # Fallback to placeholder if image not found
+        image_src = "https://via.placeholder.com/100"
+        st.warning("Sigmoid_Logo.jpg not found in the directory. Using placeholder image.")
+
+    footer_html = f"""
+    <div style='background-color: #FFFFFF; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px; position: relative;'>
+        <img src="{image_src}" alt="Sigmoid Logo" style='position: absolute; top: 10px; left: 10px; width: 100px; height: auto; border-radius: 5px;'>
+        <div style='margin-left: 120px;'> <!-- Adjust margin to avoid overlap with logo -->
+            <p style='font-size: 16px; font-weight: bold; margin: 10px 0 5px 0;'>Contact Us</p>
+            <p style='font-size: 14px; margin: 0;'>
+                Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF; text-decoration: none;'>arkaprova@sigmoidanalytics.com</a><br>
+                Phone: <span style='color: #FFD700;'>+91 9330492917</span><br>
+                Website: <a href='https://merge02.streamlit.app' style='color: #1E90FF; text-decoration: none;'>merge02.streamlit.app</a>
+            </p>
+        </div>
+    </div>
+    """
+    st.markdown(footer_html, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
