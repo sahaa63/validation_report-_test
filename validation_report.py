@@ -300,7 +300,7 @@ def main():
             <p style='font-size: 14px; margin: 0;'>
                 Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF; text-decoration: none;'>arkaprova@sigmoidanalytics.com</a><br>
                 Phone: <span style='color: #FFD700;'>+91 9330492917</span><br>
-                Website: <a href='https://github.com/sahaa63/validation_report-_test' style='color: #1E90FF; text-decoration: none;'>merge02.streamlit.app</a>
+                Website: <a href='https://github.com/sahaa63/validation_report-_test' style='color: #1E90FF; text-decoration: none;'>Github</a>
             </p>
         </div>
     </div>
