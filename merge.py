@@ -32,7 +32,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
     .file-list {
-        background-color: #F5F5FF;
+        background-color: #F5F5F5;
         color: #333333;
         padding: 10px;
         border-radius: 5px;
@@ -119,13 +119,10 @@ def combine_excel_files(file_list):
     if not file_list or len(file_list) > 10:
         return None, None
 
-    # Extract the common prefix before the first underscore from all filenames
-    prefixes = [os.path.splitext(file.name)[0].split('_')[0] for file in file_list]
-    # Check if all prefixes are the same (common part)
-    common_prefix = prefixes[0] if all(prefix == prefixes[0] for prefix in prefixes) else "Merged"
-    # Clean the common prefix (remove spaces)
-    common_prefix = common_prefix.replace(" ", "")
-    output_filename = f"{common_prefix}_validation_report.xlsx"
+    # Extract the part of the first filename before the first underscore
+    first_filename = os.path.splitext(file_list[0].name)[0]  # Remove .xlsx extension
+    base_name = first_filename.split('_')[0]  # Take everything before the first underscore
+    output_filename = f"{base_name}_validation_report.xlsx"
 
     # Create a new workbook in memory
     output_buffer = io.BytesIO()
@@ -188,7 +185,7 @@ def main():
         <li>Upload up to 10 Excel files using the button below.</li>
         <li>All sheets from each file will be merged into one output file <strong>in the order you upload them</strong>.</li>
         <li>Duplicate sheet names will get a numeric suffix (e.g., 'Sheet_1').</li>
-        <li>The output file will be named based on the common prefix of your files (e.g., 'Report1_validation_report.xlsx').</li>
+        <li>The output file will be named using the first file's prefix before the first underscore (e.g., 'Retailer Redemption_validation_report.xlsx').</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -228,6 +225,19 @@ def main():
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key="download_button"
                     )
+
+    # Footer with footnotes and contacts
+    footer_html = """
+    <div style='text-align: left; padding-top: 20px;'>
+        <hr>
+        <p><small>[1] The output filename uses the first file's prefix before the first underscore, followed by '_validation_report'.</small></p>
+        <p><strong>Contact Us:</strong><br>
+        Email: <a href='mailto:support@excelmerger.com'>support@excelmerger.com</a><br>
+        Phone: (555) 123-4567<br>
+        Website: <a href='https://excelmerger.com'>excelmerger.com</a></p>
+    </div>
+    """
+    st.markdown(footer_html, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
