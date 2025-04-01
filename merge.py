@@ -118,7 +118,6 @@ def combine_excel_files(file_list):
     if not file_list or len(file_list) > 10:
         return None, None
 
-    # Extract the part of the first filename before the first underscore
     first_filename = os.path.splitext(file_list[0].name)[0]
     base_name = first_filename.split('_')[0]
     output_filename = f"{base_name}_validation_report.xlsx"
@@ -219,22 +218,8 @@ def main():
                         key="download_button"
                     )
 
-    # Fancy Footer with Image
-    # Option 1: Using a Public URL (replace with your image URL)
-    image_url = "https://via.placeholder.com/100"  # Replace with your image URL
-
-    # Option 2: Local Image (uncomment and adjust path)
-    # image_path = "path/to/your/image.png"  # Replace with your local image path
-    # image_base64 = get_base64_image(image_path)
-    # image_src = f"data:image/png;base64,{image_base64}"
-
-    # Option 3: Uploaded Image (uncomment to allow user upload)
-    # uploaded_image = st.file_uploader("Upload Footer Image (optional)", type=["png", "jpg", "jpeg"])
-    # if uploaded_image:
-    #     image_base64 = base64.b64encode(uploaded_image.read()).decode()
-    #     image_src = f"data:image/png;base64,{image_base64}"
-    # else:
-    #     image_src = image_url
+    # Fancy Footer with Your Google Drive Image
+    image_url = "https://drive.google.com/uc?id=1ljbY6U2hZBQ3lq0HPNwIDIVTPt8M5316"  # Direct URL to your image
 
     footer_html = f"""
     <div style='background-color: #2E2E2E; color: #FFFFFF; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px;'>
@@ -244,13 +229,12 @@ def main():
                 <p style='font-size: 14px; font-style: italic; margin: 0;'>[1] The output filename uses the first file's prefix before the first underscore, followed by '_validation_report'.</p>
                 <p style='font-size: 16px; font-weight: bold; margin: 10px 0 5px 0;'>Contact Us</p>
                 <p style='font-size: 14px; margin: 0;'>
-                    Email: <a href='mailto:support@excelmerger.com' style='color: #1E90FF; text-decoration: none;'>support@excelmerger.com</a><br>
-                    Phone: <span style='color: #FFD700;'>(555) 123-4567</span><br>
-                    Website: <a href='https://excelmerger.com' style='color: #1E90FF; text-decoration: none;'>excelmerger.com</a>
+                    Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF; text-decoration: none;'>arkaprova@sigmoidanalytics.com</a><br>
+                    Phone: <span style='color: #FFD700;'>+91 9330492917</span><br>
+                    Website: <a href='https://merge02.streamlit.app' style='color: #1E90FF; text-decoration: none;'>merge02.streamlit.app</a>
                 </p>
             </div>
         </div>
-        <p style='text-align: center; font-size: 12px; color: #BBBBBB; margin-top: 15px;'>© 2025 Excel Merger App. All rights reserved.</p>
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
