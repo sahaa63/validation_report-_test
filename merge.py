@@ -231,7 +231,6 @@ def main():
     <div style='background-color: #FFFFFF; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px; position: relative;'>
         <img src="{image_src}" alt="Sigmoid Logo" style='position: absolute; top: 10px; left: 10px; width: 100px; height: auto; border-radius: 5px;'>
         <div style='margin-left: 120px;'> <!-- Adjust margin to avoid overlap with logo -->
-            <p style='font-size: 14px; font-style: italic; margin: 0;'>[1] The output filename uses the first file's prefix before the first underscore, followed by '_validation_report'.</p>
             <p style='font-size: 16px; font-weight: bold; margin: 10px 0 5px 0;'>Contact Us</p>
             <p style='font-size: 14px; margin: 0;'>
                 Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF; text-decoration: none;'>arkaprova@sigmoidanalytics.com</a><br>
