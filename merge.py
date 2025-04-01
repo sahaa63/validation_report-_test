@@ -219,7 +219,7 @@ def main():
                     )
 
     # Fancy Footer with Your Google Drive Image
-    image_url = "https://drive.google.com/uc?id=1ljbY6U2hZBQ3lq0HPNwIDIVTPt8M5316"  # Direct URL to your image
+    image_url = "https://drive.google.com/uc?id=1VhARZqU69XJGyMkPOCTacxkW-TX_mG74"  # Direct URL to your image
 
     footer_html = f"""
     <div style='background-color: #2E2E2E; color: #FFFFFF; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px;'>
