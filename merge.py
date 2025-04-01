@@ -1,28 +1,20 @@
 import streamlit as st
 import pandas as pd
 import io
-import numpy as np
 import os
-from openpyxl.styles import PatternFill, Font
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import PatternFill
 from openpyxl.utils import get_column_letter
 import base64  # For base64 image encoding
 
-# Define the checklist data as a DataFrame
-checklist_data = {
-    "S.No": range(1, 8),
-    "Checklist": [
-        "All the columns of excel replicated in PBI (No extra columns)",
-        "All the filters of excel replicated in PBI",
-        "Filters working as expected (single/multi select as usual)",
-        "Column names matching with excel",
-        "Currency symbols to be replicated",
-        "Pre-applied filters while generating validation report?",
-        "Sorting is replicated"
-    ],
-}
-checklist_df = pd.DataFrame(checklist_data)
+# Check for openpyxl availability
+try:
+    from openpyxl import Workbook, load_workbook
+except ImportError:
+    st.error("The 'openpyxl' library is not installed. Please ensure it's included in your requirements.txt and the environment is set up correctly.")
+    st.stop()
 
-# Custom CSS for styling
+# Custom CSS for styling with improved contrast
 st.markdown("""
     <style>
     .title {
@@ -77,112 +69,31 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def generate_validation_report(excel_df, pbi_df):
-    dims = [col for col in excel_df.columns if col in pbi_df.columns and 
-            (excel_df[col].dtype == 'object' or '_id' in col.lower() or '_key' in col.lower() or
-             '_ID' in col or '_KEY' in col)]
+def apply_conditional_formatting(ws, sheet_name, wb):
+    temp_buffer = io.BytesIO()
+    wb.save(temp_buffer)
+    temp_buffer.seek(0)
+    df = pd.read_excel(temp_buffer, sheet_name=sheet_name)
 
-    excel_df[dims] = excel_df[dims].fillna('NAN')
-    pbi_df[dims] = pbi_df[dims].fillna('NAN')
-
-    excel_measures = [col for col in excel_df.columns if col not in dims and np.issubdtype(excel_df[col].dtype, np.number)]
-    pbi_measures = [col for col in pbi_df.columns if col not in dims and np.issubdtype(pbi_df[col].dtype, np.number)]
-    
-    all_measures = list(set(excel_measures) & set(pbi_measures))
-
-    excel_agg = excel_df.groupby(dims)[all_measures].sum().reset_index()
-    pbi_agg = pbi_df.groupby(dims)[all_measures].sum().reset_index()
-
-    excel_agg['unique_key'] = excel_agg[dims].astype(str).agg('-'.join, axis=1).str.upper()
-    pbi_agg['unique_key'] = pbi_agg[dims].astype(str).agg('-'.join, axis=1).str.upper()
-
-    excel_agg = excel_agg[['unique_key'] + [col for col in excel_agg.columns if col != 'unique_key']]
-    pbi_agg = pbi_agg[['unique_key'] + [col for col in pbi_agg.columns if col != 'unique_key']]
-
-    validation_report = pd.DataFrame({'unique_key': list(set(excel_agg['unique_key']) | set(pbi_agg['unique_key']))})
-
-    for dim in dims:
-        validation_report[dim] = validation_report['unique_key'].map(dict(zip(excel_agg['unique_key'], excel_agg[dim])))
-        validation_report[dim].fillna(validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[dim]))), inplace=True)
-
-    validation_report['presence'] = validation_report['unique_key'].apply(
-        lambda key: 'Present in Both' if key in excel_agg['unique_key'].values and key in pbi_agg['unique_key'].values
-        else ('Present in excel' if key in excel_agg['unique_key'].values
-              else 'Present in PBI')
-    )
-
-    for measure in all_measures:
-        validation_report[f'{measure}_excel'] = validation_report['unique_key'].map(dict(zip(excel_agg['unique_key'], excel_agg[measure])))
-        validation_report[f'{measure}_PBI'] = validation_report['unique_key'].map(dict(zip(pbi_agg['unique_key'], pbi_agg[measure])))
-        
-        validation_report[f'{measure}_Diff'] = np.where(
-            (validation_report[f'{measure}_PBI'].fillna(0) == 0) | (validation_report[f'{measure}_excel'].fillna(0) == 0),
-            np.where(
-                (validation_report[f'{measure}_PBI'].fillna(0) == 0) & (validation_report[f'{measure}_excel'].fillna(0) == 0),
-                0,
-                1
-            ),
-            abs(round((validation_report[f'{measure}_PBI'].fillna(0) - validation_report[f'{measure}_excel'].fillna(0)) / 
-                     validation_report[f'{measure}_excel'].fillna(0), 4))
-        )
-
-    column_order = ['unique_key'] + dims + ['presence'] + \
-                   [col for measure in all_measures for col in 
-                    [f'{measure}_excel', f'{measure}_PBI', f'{measure}_Diff']]
-    validation_report = validation_report[column_order]
-
-    return validation_report, excel_agg, pbi_agg
-
-def column_checklist(excel_df, pbi_df):
-    excel_columns = excel_df.columns.tolist()
-    pbi_columns = pbi_df.columns.tolist()
-
-    checklist_df = pd.DataFrame({
-        'excel Columns': excel_columns + [''] * (max(len(pbi_columns), len(excel_columns)) - len(excel_columns)),
-        'PowerBI Columns': pbi_columns + [''] * (max(len(pbi_columns), len(excel_columns)) - len(pbi_columns))
-    })
-
-    checklist_df['Match'] = checklist_df.apply(lambda row: row['excel Columns'] == row['PowerBI Columns'], axis=1)
-    
-    return checklist_df
-
-def generate_diff_checker(validation_report):
-    diff_columns = [col for col in validation_report.columns if col.endswith('_Diff')]
-
-    diff_checker = pd.DataFrame({
-        'Diff Column Name': diff_columns,
-        'Percentage Difference': [f"{validation_report[col].mean()*100:.2f}%" for col in diff_columns]
-    })
-
-    presence_summary = {
-        'Diff Column Name': 'All rows present in both',
-        'Percentage Difference': 'Yes' if all(validation_report['presence'] == 'Present in Both') else 'No'
-    }
-    diff_checker = pd.concat([diff_checker, pd.DataFrame([presence_summary])], ignore_index=True)
-
-    return diff_checker
-
-def apply_conditional_formatting(ws, validation_report):
     dark_green_fill = PatternFill(start_color='19D119', end_color='19D119', fill_type='solid')
     yellow_fill = PatternFill(start_color='E4E81B', end_color='E4E81B', fill_type='solid')
     dark_red_fill = PatternFill(start_color='E82D1C', end_color='E82D1C', fill_type='solid')
 
-    diff_cols = [col for col in validation_report.columns if col.endswith('_Diff')]
-    presence_col_idx = validation_report.columns.get_loc('presence') + 1
+    diff_cols = [col for col in df.columns if col.endswith('_Diff')]
+    presence_col_idx = df.columns.get_loc('presence') + 1 if 'presence' in df.columns else None
     
-    for col_idx, col_name in enumerate(validation_report.columns, 1):
+    for col_idx, col_name in enumerate(df.columns, 1):
         col_letter = get_column_letter(col_idx)
         
         if col_name.endswith('_Diff'):
             header_cell = ws[f'{col_letter}1']
             header_cell.number_format = '0.00%'
             
-            for row_idx, value in enumerate(validation_report[col_name], 2):
+            for row_idx, value in enumerate(df[col_name], 2):
                 cell = ws[f'{col_letter}{row_idx}']
                 if pd.notna(value):
                     cell.value = value
                     cell.number_format = '0.00%'
-                    
                     if value <= 0.1:
                         cell.fill = dark_green_fill
                     elif value <= 0.5:
@@ -195,13 +106,61 @@ def apply_conditional_formatting(ws, validation_report):
                     else:
                         cell.fill = dark_red_fill
         
-        elif col_idx == presence_col_idx:
-            for row_idx, value in enumerate(validation_report[col_name], 2):
+        elif presence_col_idx and col_idx == presence_col_idx:
+            for row_idx, value in enumerate(df[col_name], 2):
                 cell = ws[f'{col_letter}{row_idx}']
                 if value == 'Present in Both':
                     cell.fill = dark_green_fill
                 elif value in ['Present in excel', 'Present in PBI']:
                     cell.fill = dark_red_fill
+
+def combine_excel_files(file_list):
+    if not file_list or len(file_list) > 10:
+        return None, None
+
+    first_filename = os.path.splitext(file_list[0].name)[0]
+    base_name = first_filename.split('_')[0]
+    output_filename = f"{base_name}_validation_report.xlsx"
+
+    output_buffer = io.BytesIO()
+    output_wb = Workbook()
+    sheet_order = []
+    sheet_name_count = {}
+
+    for uploaded_file in file_list:
+        file_bytes = uploaded_file.read()
+        try:
+            wb = load_workbook(filename=io.BytesIO(file_bytes))
+        except Exception as e:
+            st.error(f"Error reading file {uploaded_file.name}: {str(e)}")
+            return None, None
+
+        for sheet_name in wb.sheetnames:
+            base_sheet_name = sheet_name
+            if sheet_name in sheet_name_count:
+                sheet_name_count[sheet_name] += 1
+                new_sheet_name = f"{base_sheet_name}_{sheet_name_count[sheet_name]}"
+            else:
+                sheet_name_count[sheet_name] = 0
+                new_sheet_name = sheet_name
+
+            ws_source = wb[base_sheet_name]
+            ws_target = output_wb.create_sheet(title=new_sheet_name)
+            for row in ws_source.rows:
+                for cell in row:
+                    ws_target[cell.coordinate].value = cell.value
+            sheet_order.append(new_sheet_name)
+
+    if 'Sheet' in output_wb.sheetnames:
+        output_wb.remove(output_wb['Sheet'])
+    output_wb._sheets = [output_wb[sheet] for sheet in sheet_order]
+
+    for sheet_name in output_wb.sheetnames:
+        apply_conditional_formatting(output_wb[sheet_name], sheet_name, output_wb)
+
+    output_wb.save(output_buffer)
+    output_buffer.seek(0)
+    return output_buffer, output_filename
 
 # Function to encode local image as base64
 def get_base64_image(image_path):
@@ -209,81 +168,57 @@ def get_base64_image(image_path):
         return base64.b64encode(img_file.read()).decode()
 
 def main():
-    st.markdown('<div class="title">Validation Report Generator</div>', unsafe_allow_html=True)
+    st.markdown('<div class="title">Excel File Merger</div>', unsafe_allow_html=True)
 
     st.markdown("""
     <div class="instructions">
     <h3 style="color: #4682B4;">How to Use:</h3>
     <ul>
-        <li>Upload an Excel file with two sheets: "excel" and "PBI".</li>
-        <li>Ensure column names are similar in both sheets for accurate comparison.</li>
-        <li>For ID/Key/Code columns, include "_ID" or "_KEY" in the names (case insensitive) (This _ID column will be appended to the unique key to identify the rows uniqely. And won't be treated as measure. Adding _ID is neccessary when the column is in non-string i.e date or numeric but you don't want them to be treated as measure or find the difference for them).</li>
-        <li>Preview your validation report and download the formatted Excel file!</li>
+        <li>Upload up to 10 Excel files using the button below.</li>
+        <li>All sheets from each file will be merged into one output file <strong>in the order you upload them</strong>.</li>
+        <li>Duplicate sheet names will get a numeric suffix (e.g., 'Sheet_1').</li>
+        <li>The output file will be named using the first file's prefix before the first underscore (e.g., 'Retailer Redemption_validation_report.xlsx').</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader(
-        "Drop Your Excel File Here!",
-        type=["xls","xlsx"],
-        help="Upload an Excel file with 'excel' and 'PBI' sheets."
+    uploaded_files = st.file_uploader(
+        "Drop Your Excel Files Here!",
+        type=["xlsx", "xls"],
+        accept_multiple_files=True,
+        help="Upload up to 10 Excel files to merge into one. Sheets will appear in upload order.",
+        key="file_uploader"
     )
 
-    if uploaded_file is not None:
-        st.markdown(f'<div class="file-list"><strong>Uploaded File:</strong> {uploaded_file.name}</div>', unsafe_allow_html=True)
-        
-        with st.spinner("Generating your validation report... Hang tight!"):
-            try:
-                xls = pd.ExcelFile(uploaded_file)
-                excel_df = pd.read_excel(xls, 'excel')
-                pbi_df = pd.read_excel(xls, 'PBI')
+    if uploaded_files:
+        if len(uploaded_files) > 10:
+            st.markdown(
+                '<div class="error-box">Whoops! Maximum 10 files allowed. Please upload fewer files.</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(f'<div class="file-list"><strong>Uploaded {len(uploaded_files)} File(s):</strong>', unsafe_allow_html=True)
+            for file in uploaded_files:
+                st.markdown(f"- {file.name}", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-                excel_df = excel_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
-                pbi_df = pbi_df.apply(lambda x: x.str.upper().str.strip() if x.dtype == "object" else x)
+            with st.spinner("Merging your files... Hang tight!"):
+                result = combine_excel_files(uploaded_files)
+                if result:
+                    output_buffer, output_filename = result
+                    st.markdown(
+                        f'<div class="success-box">Success! Your merged file is ready: <strong>{output_filename}</strong></div>',
+                        unsafe_allow_html=True
+                    )
+                    st.download_button(
+                        label="Download Your Merged Excel!",
+                        data=output_buffer,
+                        file_name=output_filename,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="download_button"
+                    )
 
-                validation_report, excel_agg, pbi_agg = generate_validation_report(excel_df, pbi_df)
-                column_checklist_df = column_checklist(excel_df, pbi_df)
-                diff_checker_df = generate_diff_checker(validation_report)
-
-                st.subheader("Validation Report Preview")
-                display_report = validation_report.copy()
-                for col in display_report.columns:
-                    if col.endswith('_Diff'):
-                        display_report[col] = display_report[col].apply(lambda x: f"{x*100:.2f}%" if pd.notna(x) else x)
-                st.dataframe(display_report)
-
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    original_filename = os.path.splitext(uploaded_file.name)[0]
-                    sheet_name = f"{original_filename}_validation_report"
-                    if len(sheet_name) > 31:
-                        sheet_name = sheet_name[:31]
-                    validation_report.to_excel(writer, sheet_name=sheet_name, index=False)
-                    ws = writer.sheets[sheet_name]
-                    apply_conditional_formatting(ws, validation_report)
-
-                output.seek(0)
-                new_file_name = f"{original_filename}_validation_report.xlsx"
-                st.markdown(
-                    f'<div class="success-box">Success! Your validation report is ready: <strong>{new_file_name}</strong></div>',
-                    unsafe_allow_html=True
-                )
-                st.download_button(
-                    label="Download Your Validation Report!",
-                    data=output,
-                    file_name=new_file_name,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-
-                st.markdown('---')
-
-            except Exception as e:
-                st.markdown(
-                    f'<div class="error-box">Oops! An error occurred: {str(e)}</div>',
-                    unsafe_allow_html=True
-                )
-
-    # Fancy Footer with Local Image (Sigmoid_Logo.jpg)
+    # Fancy Footer with Local Image (Sigmoid_Logo.jpg) in Left Upper Corner
     try:
         image_base64 = get_base64_image("Sigmoid_Logo.jpg")
         image_src = f"data:image/jpeg;base64,{image_base64}"
@@ -294,9 +229,9 @@ def main():
 
     footer_html = f"""
     <div style='background-color: #FFFFFF; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px; position: relative;'>
-        <img src="{image_src}" alt="Sigmoid Logo" style='position: absolute; top: 10px; right: 10px; width: 100px; height: auto; border-radius: 5px;'>
-        <div style='margin-right: 120px;'> <!-- Adjust margin to avoid overlap with logo -->
-            <p style='font-size: 14px; font-style: italic; margin: 0;'>[1] Validation report compares Excel and PBI data based on dimensions and measures.</p>
+        <img src="{image_src}" alt="Sigmoid Logo" style='position: absolute; top: 10px; left: 10px; width: 100px; height: auto; border-radius: 5px;'>
+        <div style='margin-left: 120px;'> <!-- Adjust margin to avoid overlap with logo -->
+            <p style='font-size: 14px; font-style: italic; margin: 0;'>[1] The output filename uses the first file's prefix before the first underscore, followed by '_validation_report'.</p>
             <p style='font-size: 16px; font-weight: bold; margin: 10px 0 5px 0;'>Contact Us</p>
             <p style='font-size: 14px; margin: 0;'>
                 Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF; text-decoration: none;'>arkaprova@sigmoidanalytics.com</a><br>
