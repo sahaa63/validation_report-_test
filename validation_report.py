@@ -211,7 +211,7 @@ def main():
     <ul>
         <li>Upload an Excel file with two sheets: "excel" and "PBI".</li>
         <li>Ensure column names are similar in both sheets for accurate comparison.</li>
-        <li>For ID/Key/Code columns, include "_ID" or "_KEY" in the names (case insensitive) This _ID column will be appended to the unique key ti identify the rows uniqely. And won't be treated as measure. Adding _Id is neccessary when the column is in non-string i.e date or numeric but you don't want them to be treated as measure or find the difference for them.</li>
+        <li>For ID/Key/Code columns, include "_ID" or "_KEY" in the names (case insensitive) (This _ID column will be appended to the unique key to identify the rows uniqely. And won't be treated as measure. Adding _ID is neccessary when the column is in non-string i.e date or numeric but you don't want them to be treated as measure or find the difference for them).</li>
         <li>Preview your validation report and download the formatted Excel file!</li>
     </ul>
     </div>
