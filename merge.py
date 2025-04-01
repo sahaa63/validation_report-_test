@@ -5,6 +5,7 @@ import os
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill
 from openpyxl.utils import get_column_letter
+import base64  # For base64 image encoding (optional)
 
 # Check for openpyxl availability
 try:
@@ -69,7 +70,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def apply_conditional_formatting(ws, sheet_name, wb):
-    # Save workbook to a temporary buffer and read it
     temp_buffer = io.BytesIO()
     wb.save(temp_buffer)
     temp_buffer.seek(0)
@@ -94,7 +94,6 @@ def apply_conditional_formatting(ws, sheet_name, wb):
                 if pd.notna(value):
                     cell.value = value
                     cell.number_format = '0.00%'
-                    
                     if value <= 0.1:
                         cell.fill = dark_green_fill
                     elif value <= 0.5:
@@ -120,20 +119,15 @@ def combine_excel_files(file_list):
         return None, None
 
     # Extract the part of the first filename before the first underscore
-    first_filename = os.path.splitext(file_list[0].name)[0]  # Remove .xlsx extension
-    base_name = first_filename.split('_')[0]  # Take everything before the first underscore
+    first_filename = os.path.splitext(file_list[0].name)[0]
+    base_name = first_filename.split('_')[0]
     output_filename = f"{base_name}_validation_report.xlsx"
 
-    # Create a new workbook in memory
     output_buffer = io.BytesIO()
     output_wb = Workbook()
-
-    # List to maintain sheet order
     sheet_order = []
-    # Dictionary to track sheet names and avoid duplicates
     sheet_name_count = {}
 
-    # Process each uploaded file in order
     for uploaded_file in file_list:
         file_bytes = uploaded_file.read()
         try:
@@ -142,7 +136,7 @@ def combine_excel_files(file_list):
             st.error(f"Error reading file {uploaded_file.name}: {str(e)}")
             return None, None
 
-        for sheet_name in wb.sheetnames:  # Preserve order within each file
+        for sheet_name in wb.sheetnames:
             base_sheet_name = sheet_name
             if sheet_name in sheet_name_count:
                 sheet_name_count[sheet_name] += 1
@@ -158,22 +152,21 @@ def combine_excel_files(file_list):
                     ws_target[cell.coordinate].value = cell.value
             sheet_order.append(new_sheet_name)
 
-    # Remove default sheet if it exists
     if 'Sheet' in output_wb.sheetnames:
         output_wb.remove(output_wb['Sheet'])
-
-    # Reorder sheets according to upload order
     output_wb._sheets = [output_wb[sheet] for sheet in sheet_order]
 
-    # Apply conditional formatting to all sheets
     for sheet_name in output_wb.sheetnames:
         apply_conditional_formatting(output_wb[sheet_name], sheet_name, output_wb)
 
-    # Save to buffer
     output_wb.save(output_buffer)
     output_buffer.seek(0)
-
     return output_buffer, output_filename
+
+# Function to encode local image as base64 (optional)
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
 
 def main():
     st.markdown('<div class="title">Excel File Merger</div>', unsafe_allow_html=True)
@@ -226,15 +219,38 @@ def main():
                         key="download_button"
                     )
 
-    # Footer with footnotes and contacts
-    footer_html = """
-    <div style='text-align: left; padding-top: 20px;'>
-        <hr>
-        <p><small>[1] The output filename uses the first file's prefix before the first underscore, followed by '_validation_report'.</small></p>
-        <p><strong>Contact Us:</strong><br>
-        Email: <a href='mailto:support@excelmerger.com'>support@excelmerger.com</a><br>
-        Phone: (555) 123-4567<br>
-        Website: <a href='https://excelmerger.com'>excelmerger.com</a></p>
+    # Fancy Footer with Image
+    # Option 1: Using a Public URL (replace with your image URL)
+    image_url = "https://via.placeholder.com/100"  # Replace with your image URL
+
+    # Option 2: Local Image (uncomment and adjust path)
+    # image_path = "path/to/your/image.png"  # Replace with your local image path
+    # image_base64 = get_base64_image(image_path)
+    # image_src = f"data:image/png;base64,{image_base64}"
+
+    # Option 3: Uploaded Image (uncomment to allow user upload)
+    # uploaded_image = st.file_uploader("Upload Footer Image (optional)", type=["png", "jpg", "jpeg"])
+    # if uploaded_image:
+    #     image_base64 = base64.b64encode(uploaded_image.read()).decode()
+    #     image_src = f"data:image/png;base64,{image_base64}"
+    # else:
+    #     image_src = image_url
+
+    footer_html = f"""
+    <div style='background-color: #2E2E2E; color: #FFFFFF; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px;'>
+        <div style='display: flex; align-items: center;'>
+            <img src="{image_url}" alt="Logo" style='width: 100px; height: auto; margin-right: 20px; border-radius: 5px;'>
+            <div>
+                <p style='font-size: 14px; font-style: italic; margin: 0;'>[1] The output filename uses the first file's prefix before the first underscore, followed by '_validation_report'.</p>
+                <p style='font-size: 16px; font-weight: bold; margin: 10px 0 5px 0;'>Contact Us</p>
+                <p style='font-size: 14px; margin: 0;'>
+                    Email: <a href='mailto:support@excelmerger.com' style='color: #1E90FF; text-decoration: none;'>support@excelmerger.com</a><br>
+                    Phone: <span style='color: #FFD700;'>(555) 123-4567</span><br>
+                    Website: <a href='https://excelmerger.com' style='color: #1E90FF; text-decoration: none;'>excelmerger.com</a>
+                </p>
+            </div>
+        </div>
+        <p style='text-align: center; font-size: 12px; color: #BBBBBB; margin-top: 15px;'>© 2025 Excel Merger App. All rights reserved.</p>
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
