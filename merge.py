@@ -32,7 +32,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
     .file-list {
-        background-color: #F5F5F5;
+        background-color: #F5F5FF;
         color: #333333;
         padding: 10px;
         border-radius: 5px;
@@ -119,14 +119,13 @@ def combine_excel_files(file_list):
     if not file_list or len(file_list) > 10:
         return None, None
 
-    # Extract original filename from the first file and clean it
-    first_filename = os.path.splitext(file_list[0].name)[0]
-    # Remove '_validation_report' if it exists in the filename
-    if '_validation_report' in first_filename:
-        original_filename = first_filename.replace('_validation_report', '')
-    else:
-        original_filename = first_filename[:-1] if first_filename[-1].isdigit() else first_filename
-    output_filename = f"{original_filename}_validation_report.xlsx"
+    # Extract the common prefix before the first underscore from all filenames
+    prefixes = [os.path.splitext(file.name)[0].split('_')[0] for file in file_list]
+    # Check if all prefixes are the same (common part)
+    common_prefix = prefixes[0] if all(prefix == prefixes[0] for prefix in prefixes) else "Merged"
+    # Clean the common prefix (remove spaces)
+    common_prefix = common_prefix.replace(" ", "")
+    output_filename = f"{common_prefix}_validation_report.xlsx"
 
     # Create a new workbook in memory
     output_buffer = io.BytesIO()
@@ -189,7 +188,7 @@ def main():
         <li>Upload up to 10 Excel files using the button below.</li>
         <li>All sheets from each file will be merged into one output file <strong>in the order you upload them</strong>.</li>
         <li>Duplicate sheet names will get a numeric suffix (e.g., 'Sheet_1').</li>
-        <li>The output file will be named based on your first file (e.g., 'Report_validation_report.xlsx').</li>
+        <li>The output file will be named based on the common prefix of your files (e.g., 'Report1_validation_report.xlsx').</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
