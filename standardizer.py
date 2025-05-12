@@ -26,20 +26,20 @@ def main():
     st.set_page_config(page_title="Standardiser", layout="centered")
     st.title("🧮 Standardiser App")
 
-    uploaded_file = st.file_uploader("Upload Excel file with 'Excel' and 'PBI' sheets", type=["xlsx"])
+    uploaded_file = st.file_uploader("Upload Excel file with 'excel' and 'PBI' sheets", type=["xlsx"])
 
     if uploaded_file:
         try:
             file_name = os.path.splitext(uploaded_file.name)[0]
             output_filename = f"{file_name}_std.xlsx"
 
-            # Read all sheets
+            # Read Excel file
             xls = pd.ExcelFile(uploaded_file)
             sheet_names = xls.sheet_names
 
-            # Validate presence of 'Excel' and 'PBI' sheets (case-sensitive)
-            if 'Excel' in sheet_names and 'PBI' in sheet_names:
-                df_excel = pd.read_excel(xls, sheet_name='Excel')
+            # Validate presence of 'excel' and 'PBI'
+            if 'excel' in sheet_names and 'PBI' in sheet_names:
+                df_excel = pd.read_excel(xls, sheet_name='excel')
                 df_pbi = pd.read_excel(xls, sheet_name='PBI')
 
                 # Find common columns
@@ -48,10 +48,10 @@ def main():
                 # Standardize common columns
                 df_excel_std, df_pbi_std = standardize_column_data(df_excel.copy(), df_pbi.copy(), common_columns)
 
-                # Save to output Excel
+                # Save output with exact same sheet names: 'excel' and 'PBI'
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_excel_std.to_excel(writer, sheet_name='Excel', index=False)
+                    df_excel_std.to_excel(writer, sheet_name='excel', index=False)
                     df_pbi_std.to_excel(writer, sheet_name='PBI', index=False)
 
                 st.success("✅ File standardized successfully.")
@@ -62,7 +62,7 @@ def main():
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             else:
-                st.error("❌ The uploaded file must contain two sheets named 'Excel' and 'PBI' (case-sensitive).")
+                st.error("❌ The uploaded file must contain sheets named 'excel' and 'PBI' (case-sensitive).")
         except Exception as e:
             st.error(f"❌ Error processing file: {e}")
 
