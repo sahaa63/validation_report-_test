@@ -1,70 +1,65 @@
 import streamlit as st
 import pandas as pd
 import os
-import io
+from io import BytesIO
 
-def standardize_column_data(df1, df2, common_columns):
-    for col in common_columns:
-        # Standardize numeric columns
-        if pd.api.types.is_numeric_dtype(df1[col]) and pd.api.types.is_numeric_dtype(df2[col]):
-            df1[col] = pd.to_numeric(df1[col], errors='coerce')
-            df2[col] = pd.to_numeric(df2[col], errors='coerce')
+st.title("Standardiser App")
 
-        # Standardize datetime columns
-        elif pd.api.types.is_datetime64_any_dtype(df1[col]) or pd.api.types.is_datetime64_any_dtype(df2[col]):
-            df1[col] = pd.to_datetime(df1[col], errors='coerce')
-            df2[col] = pd.to_datetime(df2[col], errors='coerce')
+# Upload Excel file
+uploaded_file = st.file_uploader("Upload an Excel file with sheets 'excel' and 'PBI'", type=["xlsx"])
 
-        # Standardize text columns
-        else:
-            df1[col] = df1[col].astype(str).str.strip().str.lower()
-            df2[col] = df2[col].astype(str).str.strip().str.lower()
+if uploaded_file:
+    try:
+        # Read both sheets
+        xl = pd.ExcelFile(uploaded_file)
+        df_excel = xl.parse('excel')
+        df_pbi = xl.parse('PBI')
 
-    return df1, df2
+        # Get common columns
+        common_columns = [col for col in df_excel.columns if col in df_pbi.columns]
 
-def main():
-    st.set_page_config(page_title="Standardiser", layout="centered")
-    st.title("🧮 Standardiser App")
+        # Function to standardize column formats
+        def standardize_column_data(df1, df2, common_columns):
+            for col in common_columns:
+                # Handle numeric
+                if pd.api.types.is_numeric_dtype(df1[col]) and pd.api.types.is_numeric_dtype(df2[col]):
+                    df1[col] = pd.to_numeric(df1[col], errors='coerce')
+                    df2[col] = pd.to_numeric(df2[col], errors='coerce')
+                
+                # Handle dates
+                elif pd.api.types.is_datetime64_any_dtype(df1[col]) or pd.api.types.is_datetime64_any_dtype(df2[col]):
+                    df1[col] = pd.to_datetime(df1[col], errors='coerce').dt.date
+                    df2[col] = pd.to_datetime(df2[col], errors='coerce').dt.date
 
-    uploaded_file = st.file_uploader("Upload Excel file with 'excel' and 'PBI' sheets", type=["xlsx"])
+                # Handle everything else as string
+                else:
+                    df1[col] = df1[col].astype(str).str.strip().str.lower()
+                    df2[col] = df2[col].astype(str).str.strip().str.lower()
+            return df1, df2
 
-    if uploaded_file:
-        try:
-            file_name = os.path.splitext(uploaded_file.name)[0]
-            output_filename = f"{file_name}_std.xlsx"
+        # Apply standardization
+        df_excel_std, df_pbi_std = standardize_column_data(df_excel.copy(), df_pbi.copy(), common_columns)
 
-            # Read Excel file
-            xls = pd.ExcelFile(uploaded_file)
-            sheet_names = xls.sheet_names
+        # Create in-memory Excel file
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_excel_std.to_excel(writer, sheet_name='excel', index=False)
+            df_pbi_std.to_excel(writer, sheet_name='PBI', index=False)
 
-            # Validate presence of 'excel' and 'PBI'
-            if 'excel' in sheet_names and 'PBI' in sheet_names:
-                df_excel = pd.read_excel(xls, sheet_name='excel')
-                df_pbi = pd.read_excel(xls, sheet_name='PBI')
+        output.seek(0)
 
-                # Find common columns
-                common_columns = list(set(df_excel.columns) & set(df_pbi.columns))
+        # Construct output filename
+        original_name = os.path.splitext(uploaded_file.name)[0]
+        output_filename = f"{original_name}_std.xlsx"
 
-                # Standardize common columns
-                df_excel_std, df_pbi_std = standardize_column_data(df_excel.copy(), df_pbi.copy(), common_columns)
+        # Download link
+        st.success("Standardization complete. Download the standardized file below:")
+        st.download_button(label="📥 Download Standardized Excel",
+                           data=output,
+                           file_name=output_filename,
+                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-                # Save output with exact same sheet names: 'excel' and 'PBI'
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_excel_std.to_excel(writer, sheet_name='excel', index=False)
-                    df_pbi_std.to_excel(writer, sheet_name='PBI', index=False)
-
-                st.success("✅ File standardized successfully.")
-                st.download_button(
-                    label=f"📥 Download Standardized File: {output_filename}",
-                    data=output.getvalue(),
-                    file_name=output_filename,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            else:
-                st.error("❌ The uploaded file must contain sheets named 'excel' and 'PBI' (case-sensitive).")
-        except Exception as e:
-            st.error(f"❌ Error processing file: {e}")
-
-if __name__ == "__main__":
-    main()
+    except ValueError as e:
+        st.error(f"Error: {e}")
+    except Exception as e:
+        st.exception(f"Unexpected error: {e}")
