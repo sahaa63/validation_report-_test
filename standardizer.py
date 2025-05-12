@@ -33,8 +33,8 @@ if uploaded_file:
 
                 # Handle everything else as string
                 else:
-                    df1[col] = df1[col].astype(str).str.strip().str.lower()
-                    df2[col] = df2[col].astype(str).str.strip().str.lower()
+                    df1[col] = df1[col].astype(str).str.strip()
+                    df2[col] = df2[col].astype(str).str.strip()
             return df1, df2
 
         # Apply standardization
