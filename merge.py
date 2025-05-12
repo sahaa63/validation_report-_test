@@ -69,7 +69,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def apply_conditional_formatting(ws, sheet_name, wb):
+def apply_conditional_formatting(ws, sheet_name, wb, low_thresh, mid_thresh):
     temp_buffer = io.BytesIO()
     wb.save(temp_buffer)
     temp_buffer.seek(0)
@@ -94,10 +94,10 @@ def apply_conditional_formatting(ws, sheet_name, wb):
                 if pd.notna(value):
                     cell.value = value
                     cell.number_format = '0.00%'
-                    if value <= 0.1:
+                    if value <= low_thresh:
                         cell.fill = dark_green_fill
-                    elif value <= 0.5:
-                        ratio = (value - 0.1) / 0.5
+                    elif value <= mid_thresh:
+                        ratio = (value - low_thresh) / (mid_thresh - low_thresh)
                         r = int(255 + (139 - 255) * ratio)
                         g = int(255 - (255 - 0) * ratio)
                         b = int(0)
@@ -156,7 +156,7 @@ def combine_excel_files(file_list):
     output_wb._sheets = [output_wb[sheet] for sheet in sheet_order]
 
     for sheet_name in output_wb.sheetnames:
-        apply_conditional_formatting(output_wb[sheet_name], sheet_name, output_wb)
+        apply_conditional_formatting(output_wb[sheet_name], sheet_name, output_wb, low_threshold, mid_threshold)
 
     output_wb.save(output_buffer)
     output_buffer.seek(0)
@@ -169,6 +169,10 @@ def get_base64_image(image_path):
 
 def main():
     st.markdown('<div class="title">Excel File Merger</div>', unsafe_allow_html=True)
+# Sidebar thresholds
+    st.sidebar.header("⚙️ Diff Color Thresholds")
+    low_threshold = st.sidebar.number_input("Green Threshold (≤)", min_value=0.0, max_value=1.0, value=0.1, step=0.01)
+    mid_threshold = st.sidebar.number_input("Amber Threshold (≤)", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
 
     st.markdown("""
     <div class="instructions">

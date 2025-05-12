@@ -162,9 +162,8 @@ def generate_diff_checker(validation_report):
 
     return diff_checker
 
-def apply_conditional_formatting(ws, validation_report):
+def apply_conditional_formatting(ws, validation_report, low_thresh, mid_thresh):
     dark_green_fill = PatternFill(start_color='19D119', end_color='19D119', fill_type='solid')
-    yellow_fill = PatternFill(start_color='E4E81B', end_color='E4E81B', fill_type='solid')
     dark_red_fill = PatternFill(start_color='E82D1C', end_color='E82D1C', fill_type='solid')
 
     diff_cols = [col for col in validation_report.columns if col.endswith('_Diff')]
@@ -183,13 +182,13 @@ def apply_conditional_formatting(ws, validation_report):
                     cell.value = value
                     cell.number_format = '0.00%'
                     
-                    if value <= 0.1:
+                    if value <= low_thresh:
                         cell.fill = dark_green_fill
-                    elif value <= 0.5:
-                        ratio = (value - 0.1) / 0.5
+                    elif value <= mid_thresh:
+                        ratio = (value - low_thresh) / (mid_thresh - low_thresh)
                         r = int(255 + (139 - 255) * ratio)
                         g = int(255 - (255 - 0) * ratio)
-                        b = int(0)
+                        b = 0
                         color = f'{r:02X}{g:02X}{b:02X}'
                         cell.fill = PatternFill(start_color=color, end_color=color, fill_type='solid')
                     else:
@@ -210,6 +209,11 @@ def get_base64_image(image_path):
 
 def main():
     st.markdown('<div class="title">Validation Report Generator</div>', unsafe_allow_html=True)
+
+    # Sidebar thresholds
+    st.sidebar.header("⚙️ Diff Color Thresholds")
+    low_threshold = st.sidebar.number_input("Green Threshold (≤)", min_value=0.0, max_value=1.0, value=0.1, step=0.01)
+    mid_threshold = st.sidebar.number_input("Amber Threshold (≤)", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
 
     st.markdown("""
     <div class="instructions">
@@ -260,7 +264,7 @@ def main():
                         sheet_name = sheet_name[:31]
                     validation_report.to_excel(writer, sheet_name=sheet_name, index=False)
                     ws = writer.sheets[sheet_name]
-                    apply_conditional_formatting(ws, validation_report)
+                    apply_conditional_formatting(ws, validation_report, low_threshold, mid_threshold)
 
                 output.seek(0)
                 new_file_name = f"{original_filename}_validation_report.xlsx"
@@ -283,24 +287,22 @@ def main():
                     unsafe_allow_html=True
                 )
 
-    # Fancy Footer with Local Image (Sigmoid_Logo.jpg) in Left Upper Corner
     try:
         image_base64 = get_base64_image("Sigmoid_Logo.jpg")
         image_src = f"data:image/jpeg;base64,{image_base64}"
     except FileNotFoundError:
-        # Fallback to placeholder if image not found
         image_src = "https://via.placeholder.com/100"
         st.warning("Sigmoid_Logo.jpg not found in the directory. Using placeholder image.")
 
     footer_html = f"""
     <div style='background-color: #FFFFFF; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 30px; position: relative;'>
         <img src="{image_src}" alt="Sigmoid Logo" style='position: absolute; top: 10px; left: 10px; width: 100px; height: auto; border-radius: 5px;'>
-        <div style='margin-left: 120px;'> <!-- Adjust margin to avoid overlap with logo -->
+        <div style='margin-left: 120px;'>
             <p style='font-size: 16px; font-weight: bold; margin: 10px 0 5px 0;'>Contact Us</p>
             <p style='font-size: 14px; margin: 0;'>
-                Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF; text-decoration: none;'>arkaprova@sigmoidanalytics.com</a><br>
+                Email: <a href='mailto:arkaprova@sigmoidanalytics.com' style='color: #1E90FF;'>arkaprova@sigmoidanalytics.com</a><br>
                 Phone: <span style='color: #FFD700;'>+91 9330492917</span><br>
-                Website: <a href='https://github.com/sahaa63/validation_report-_test' style='color: #1E90FF; text-decoration: none;'>Github</a>
+                Website: <a href='https://github.com/sahaa63/validation_report-_test' style='color: #1E90FF;'>Github</a>
             </p>
         </div>
     </div>
